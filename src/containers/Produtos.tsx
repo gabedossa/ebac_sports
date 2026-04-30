@@ -1,42 +1,45 @@
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from '../store'
+import { adicionarAoCarrinho, favoritar } from '../store/reducers/carrinho'
+import { useGetProdutosQuery } from '../store/api/api'
 import { Produto as ProdutoType } from '../App'
 import Produto from '../components/Produto'
 
 import * as S from './styles'
 
-type Props = {
-  produtos: ProdutoType[]
-  favoritos: ProdutoType[]
-  adicionarAoCarrinho: (produto: ProdutoType) => void
-  favoritar: (produto: ProdutoType) => void
-}
+const ProdutosComponent = () => {
+  const dispatch = useDispatch()
+  const { data: produtos = [] } = useGetProdutosQuery()
+  const itensNoCarrinho = useSelector(
+    (state: RootState) => state.carrinho.itens
+  )
+  const favoritos = useSelector(
+    (state: RootState) => state.carrinho.favoritos
+  )
 
-const ProdutosComponent = ({
-  produtos,
-  favoritos,
-  adicionarAoCarrinho,
-  favoritar
-}: Props) => {
-  const produtoEstaNosFavoritos = (produto: ProdutoType) => {
-    const produtoId = produto.id
-    const IdsDosFavoritos = favoritos.map((f) => f.id)
+  const produtoEstaNosFavoritos = (produto: ProdutoType) =>
+    favoritos.some((f) => f.id === produto.id)
 
-    return IdsDosFavoritos.includes(produtoId)
+  function handleAdicionarAoCarrinho(produto: ProdutoType) {
+    if (itensNoCarrinho.find((p) => p.id === produto.id)) {
+      alert('Item já adicionado')
+    } else {
+      dispatch(adicionarAoCarrinho(produto))
+    }
   }
 
   return (
-    <>
-      <S.Produtos>
-        {produtos.map((produto) => (
-          <Produto
-            estaNosFavoritos={produtoEstaNosFavoritos(produto)}
-            key={produto.id}
-            produto={produto}
-            favoritar={favoritar}
-            aoComprar={adicionarAoCarrinho}
-          />
-        ))}
-      </S.Produtos>
-    </>
+    <S.Produtos>
+      {produtos.map((produto) => (
+        <Produto
+          estaNosFavoritos={produtoEstaNosFavoritos(produto)}
+          key={produto.id}
+          produto={produto}
+          favoritar={(p) => dispatch(favoritar(p))}
+          aoComprar={handleAdicionarAoCarrinho}
+        />
+      ))}
+    </S.Produtos>
   )
 }
 
